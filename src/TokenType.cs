@@ -10,15 +10,18 @@
         NotEqual,
         Less,
         Greater,
-        Literal,
         StringBeginning,
         StringEnding,
-        Int,
-        Float,
-        Bool,
+        Number,
+        Keyword,
+        String,
         Variable,
         LParentheses,
-        RParentheses
-
+        RParentheses,
+        Add,
+        Subtract,
+        Multiply,
+        Divide,
+        Modulo
     }
 }

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Aadev.ConditionsInterpreter
@@ -15,12 +17,24 @@ namespace Aadev.ConditionsInterpreter
 
         private bool backsplash = false;
         private bool inString = false;
+        private bool inStringBreak = false;
 
 
+        private static readonly Regex wordRegEx = new Regex("[a-zA-Z0-9_]+", RegexOptions.Compiled);
+        private static readonly Regex floatRegEx = new Regex("^[0-9]*([.][0-9]+)?", RegexOptions.Compiled);
+
+        [DebuggerStepThrough]
         private char? NextChar()
         {
             index++;
-            currentChar = condition.Length <= index ? null : (char?)condition[index];
+
+            if (condition.Length <= index)
+                currentChar = null;
+            else
+                currentChar = condition[index];
+
+
+
             return currentChar;
         }
 
@@ -29,20 +43,71 @@ namespace Aadev.ConditionsInterpreter
             this.condition = condition;
             NextChar();
         }
+        private void CreateStrignContent(List<Token> tokens)
+        {
+            StringBuilder sb = new StringBuilder();
 
+            bool bs;
+            bool end = false;
+            bool cont = false;
+            while (true)
+            {
+                if (currentChar is '\\')
+                {
+                    bs = true;
+                    NextChar();
+                    if (currentChar is null)
+                        throw new Exception($"Invalid usage of char '\\' at {index}");
+                }
+                else
+                {
+                    bs = false;
+                }
+
+                if ((currentChar is '\'' || currentChar is '\"') && !bs)
+                {
+                    end = true;
+                    NextChar();
+                    break;
+
+                }
+                if (currentChar is '$' && !bs)
+                {
+                    cont = true;
+                    break;
+                }
+
+                sb.Append(currentChar);
+                NextChar();
+            }
+            if (sb.Length > 0)
+                tokens.Add(new Token(TokenType.String, sb.ToString()));
+            if (cont)
+                return;
+            if (end)
+            {
+
+
+                tokens.Add(new Token(TokenType.StringEnding));
+
+                inString = false;
+            }
+        }
         public Token[] GetTokens()
         {
+
+
             List<Token> tokens = new List<Token>();
             while (currentChar != null)
             {
                 if (currentChar is '\\')
                 {
                     if (!inString)
-                        throw new Exception("Invalid usage of char '\\'");
+                        throw new Exception($"Invalid usage of char '\\' at {index}");
                     backsplash = true;
                     NextChar();
                     if (currentChar is null)
-                        throw new Exception("Invalid usage of char '\\'");
+                        throw new Exception($"Invalid usage of char '\\' at {index}");
                 }
                 else
                 {
@@ -55,11 +120,13 @@ namespace Aadev.ConditionsInterpreter
                     {
                         if (backsplash)
                         {
-                            tokens.Add(new Token(TokenType.Literal, currentChar));
+                            tokens.Add(new Token(TokenType.String, currentChar.ToString()));
                             NextChar();
                             continue;
                         }
+
                         tokens.Add(new Token(TokenType.StringEnding));
+
                         inString = false;
                         NextChar();
                         continue;
@@ -67,14 +134,18 @@ namespace Aadev.ConditionsInterpreter
                     tokens.Add(new Token(TokenType.StringBeginning));
                     inString = true;
                     NextChar();
+
+                    CreateStrignContent(tokens);
+
                     continue;
 
                 }
-                if (currentChar is '$')
+                if (currentChar is '$' && inString)
                 {
+
                     if (backsplash)
                     {
-                        tokens.Add(new Token(TokenType.Literal, currentChar));
+                        tokens.Add(new Token(TokenType.String, currentChar.ToString()));
                         NextChar();
                         continue;
                     }
@@ -82,33 +153,34 @@ namespace Aadev.ConditionsInterpreter
                     NextChar();
 
                     if (!(currentChar is '('))
-                        throw new Exception("Invalid usage of '$'");
-                    StringBuilder varBilder = new StringBuilder();
-
-                    NextChar();
-
-                    while (char.IsLetter((char)currentChar!))
-                    {
-                        varBilder.Append(currentChar);
-                        NextChar();
+                        throw new Exception($"Invalid usage of '$' at {index}");
 
 
-                    }
-                    if (varBilder.Length is 0)
-                        throw new Exception("Invalid variable; Var lenght must be longer than 0");
 
-                    if (!(currentChar is ')'))
-                        throw new Exception("Missing ')' in variable declaration");
+                    tokens.Add(new Token(TokenType.StringEnding));
+                    tokens.Add(new Token(TokenType.Add));
+                    tokens.Add(new Token(TokenType.LParentheses));
 
-                    tokens.Add(new Token(TokenType.Variable, varBilder.ToString()));
+                    inString = false;
+                    inStringBreak = true;
+
                     NextChar();
                     continue;
-                }
 
-                if (inString)
+                }
+                if (currentChar is ')' && inStringBreak)
                 {
-                    tokens.Add(new Token(TokenType.Literal, currentChar));
+                    tokens.Add(new Token(TokenType.RParentheses));
+                    tokens.Add(new Token(TokenType.Add));
+                    tokens.Add(new Token(TokenType.StringBeginning));
+                    inString = true;
+                    inStringBreak = false;
                     NextChar();
+
+
+                    CreateStrignContent(tokens);
+
+
                     continue;
                 }
 
@@ -134,7 +206,7 @@ namespace Aadev.ConditionsInterpreter
                 {
                     NextChar();
                     if (!(currentChar is '='))
-                        throw new Exception("Invalid usgae of symblol '='");
+                        throw new Exception($"Invalid usgae of symblol '=' at {index}");
                     tokens.Add(new Token(TokenType.Equal));
                     NextChar();
                     continue;
@@ -155,7 +227,7 @@ namespace Aadev.ConditionsInterpreter
                 {
                     NextChar();
                     if (!(currentChar is '&'))
-                        throw new Exception("Invalid usgae of symblol '&'");
+                        throw new Exception($"Invalid usgae of symblol '&' at {index}");
                     tokens.Add(new Token(TokenType.And));
                     NextChar();
                     continue;
@@ -164,7 +236,7 @@ namespace Aadev.ConditionsInterpreter
                 {
                     NextChar();
                     if (!(currentChar is '|'))
-                        throw new Exception("Invalid usgae of symblol '|'");
+                        throw new Exception($"Invalid usgae of symblol '|' at {index}");
                     tokens.Add(new Token(TokenType.Or));
                     NextChar();
                     continue;
@@ -187,6 +259,37 @@ namespace Aadev.ConditionsInterpreter
                     NextChar();
                     continue;
                 }
+                if (currentChar is '+')
+                {
+                    tokens.Add(new Token(TokenType.Add));
+                    NextChar();
+                    continue;
+                }
+                if (currentChar is '-')
+                {
+                    tokens.Add(new Token(TokenType.Subtract));
+                    NextChar();
+                    continue;
+                }
+                if (currentChar is '*')
+                {
+                    tokens.Add(new Token(TokenType.Multiply));
+                    NextChar();
+                    continue;
+                }
+                if (currentChar is '/')
+                {
+                    tokens.Add(new Token(TokenType.Divide));
+                    NextChar();
+                    continue;
+                }
+                if (currentChar is '%')
+                {
+                    tokens.Add(new Token(TokenType.Modulo));
+                    NextChar();
+                    continue;
+                }
+
                 if (char.IsDigit((char)currentChar))
                 {
                     StringBuilder numBilder = new StringBuilder();
@@ -197,46 +300,52 @@ namespace Aadev.ConditionsInterpreter
 
                         if (currentChar is '.')
                         {
+                            if (isFloating)
+                                throw new Exception($"Only one '.' is allowed in numbers at {index}");
                             isFloating = true;
                         }
 
 
                         NextChar();
                     }
-                    if (isFloating)
-                    {
-                        double num = double.Parse(numBilder.ToString().Replace(".", ","));
-                        tokens.Add(new Token(TokenType.Float, num));
-                    }
-                    else
-                    {
-                        BigInteger num = BigInteger.Parse(numBilder.ToString());
-                        tokens.Add(new Token(TokenType.Int, num));
-                    }
+
+                    double num = double.Parse(numBilder.ToString().Replace(".", ","));
+                    tokens.Add(new Token(TokenType.Number, num));
+
 
 
                     continue;
 
 
                 }
-                if (string.Equals(condition.AsSpan(index, 4).ToString(), "true"))
+
+                Match match = wordRegEx.Match(condition, index);
+
+                if (match.Success)
                 {
-                    tokens.Add(new Token(TokenType.Bool, true));
-                    index += 3;
+                    if (match.Value == "true")
+                    {
+                        tokens.Add(new Token(TokenType.Keyword, Keywords.True));
+                        index += 3;
+                        NextChar();
+                        continue;
+                    }
+                    if (match.Value == "false")
+                    {
+                        tokens.Add(new Token(TokenType.Keyword, Keywords.False));
+                        index += 4;
+                        NextChar();
+                        continue;
+                    }
+
+                    tokens.Add(new Token(TokenType.Variable, match.Value));
+                    index += match.Value.Length - 1;
                     NextChar();
                     continue;
 
                 }
-                if (string.Equals(condition.AsSpan(index, 5).ToString(), "false"))
-                {
-                    tokens.Add(new Token(TokenType.Bool, false));
-                    index += 4;
-                    NextChar();
-                    continue;
 
-                }
-
-                throw new Exception($"Invalid token: '{currentChar}'");
+                throw new Exception($"Invalid token: '{currentChar}' at {index}");
 
             }
             return tokens.ToArray();

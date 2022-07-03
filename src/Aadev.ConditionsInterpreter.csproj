@@ -1,20 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-	<TargetFramework>netstandard2.1</TargetFramework>
+		<TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
 	<RootNamespace>Aadev.ConditionsInterpreter</RootNamespace>
 	<PackageId>Aadev.ConditionsInterpreter</PackageId>
 	<Authors>aAndrzej-dev</Authors>
 	<Product>Aadev.ConditionsInterpreter</Product>
-	<Nullable>enable</Nullable>
+	<Nullable>disable</Nullable>
 	<AssemblyName>Aadev.ConditionsInterpreter</AssemblyName>
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	<Version>1.0.0-beta1</Version>
+	<Version>1.0.0-beta2</Version>
 	<Deterministic>True</Deterministic>
 	<DebugType>none</DebugType>
 	<Copyright>Copyright © aAndrzej-dev 2022</Copyright>
 	<PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.ConditionsInterpreter</PackageProjectUrl>
 	<RepositoryUrl>https://github.com/aAndrzej-dev/Aadev.ConditionsInterpreter</RepositoryUrl>
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	<PackageReleaseNotes>Math operations
+String optimalizations
+Variables buffering
+Bug fixes and performance improvements</PackageReleaseNotes>
   </PropertyGroup>
 
 
