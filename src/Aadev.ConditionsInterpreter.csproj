@@ -6,19 +6,17 @@
 	<PackageId>Aadev.ConditionsInterpreter</PackageId>
 	<Authors>aAndrzej-dev</Authors>
 	<Product>Aadev.ConditionsInterpreter</Product>
-	<Nullable>disable</Nullable>
+	<Nullable>enable</Nullable>
 	<AssemblyName>Aadev.ConditionsInterpreter</AssemblyName>
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	<Version>1.0.0-beta2</Version>
+	<Version>1.0.0-beta3</Version>
 	<Deterministic>True</Deterministic>
 	<DebugType>none</DebugType>
 	<Copyright>Copyright © aAndrzej-dev 2022</Copyright>
 	<PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.ConditionsInterpreter</PackageProjectUrl>
 	<RepositoryUrl>https://github.com/aAndrzej-dev/Aadev.ConditionsInterpreter</RepositoryUrl>
 	<PackageLicenseExpression>MIT</PackageLicenseExpression>
-	<PackageReleaseNotes>Math operations
-String optimalizations
-Variables buffering
+	<PackageReleaseNotes>Renamed class form 'ConditionsInterpreter' to 'ConditionInterpreter'
 Bug fixes and performance improvements</PackageReleaseNotes>
   </PropertyGroup>
 

@@ -2,17 +2,17 @@
 
 namespace Aadev.ConditionsInterpreter
 {
-    internal class Token
+    internal struct Token
     {
         [DebuggerStepThrough]
-        public Token(TokenType tokenType, object value = null)
+        public Token(TokenType tokenType, object? value = null)
         {
             Type = tokenType;
             Value = value;
         }
 
         public TokenType Type { get; }
-        public object Value { get; }
+        public object? Value { get; }
 
         public override string ToString() => $"[{Type}]{(Value is null ? string.Empty : $": {Value}")}";
 

@@ -1,174 +1,36 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Aadev.ConditionsInterpreter
 {
-    internal class Parser
-    {
-        private readonly Token[] tokens;
-        private int index = -1;
-        private Token currentToken;
-        public Parser(Token[] tokens)
-        {
-            this.tokens = tokens;
-            NextToken();
-        }
-        public Token NextToken()
-        {
-            index++;
-            return currentToken = tokens.Length <= index ? null : tokens[index];
-        }
-
-        public Node Parse() => CreateStage7();
-
-
-        private Node CreateStage0()
-        {
-            Token token = currentToken;
-            if (token is null)
-                throw new Exception("Unknown error");
-
-            if (token.Type is TokenType.Subtract)
-            {
-                NextToken();
-                return new SingleOpNode(CreateStage0(), token);
-            }
-            if (token.Type is TokenType.Keyword)
-            {
-                NextToken();
-                switch ((Keywords)token.Value)
-                {
-                    case Keywords.True:
-                        return new BoolNode(token);
-                    case Keywords.False:
-                        return new BoolNode(token);
-                    default:
-                        break;
-                }
-            }
-            if (token.Type is TokenType.Number)
-            {
-                NextToken();
-                return new NumberNode(token);
-            }
-            if (token.Type is TokenType.String)
-            {
-                NextToken();
-                return new StringNode(token);
-            }
-            if (token.Type is TokenType.Not)
-            {
-                NextToken();
-                return new SingleOpNode(CreateStage0(), token);
-            }
-            if (token.Type is TokenType.LParentheses)
-            {
-                NextToken();
-                Node expression = CreateStage7();
-                if (currentToken?.Type is TokenType.RParentheses)
-                {
-                    NextToken();
-                    return expression;
-                }
-                throw new Exception("Missing ')'");
-            }
-
-
-            if (token.Type is TokenType.StringBeginning)
-            {
-                NextToken();
-
-                if(currentToken.Type == TokenType.StringEnding)
-                {
-                    NextToken();
-                    return StringNode.Empty;
-                }
-
-                Node expression = CreateStage7();
-                if (currentToken?.Type is TokenType.StringEnding)
-                {
-                    NextToken();
-                    return expression;
-                }
-                throw new Exception("Missing end of string");
-            }
-
-            if (token.Type is TokenType.Variable)
-            {
-                NextToken();
-                return new VarNode(token);
-            }
-
-            throw new Exception("Invalid syntax");
-
-        }
-        private Node CreateStage1()
-        {
-            Node left = CreateStage0();
-            while (currentToken != null && currentToken.Type == TokenType.Variable)
-            {
-                left = new ConcatingNode(left, CreateStage0());
-            }
-            return left;
-        }
-        private Node CreateStage2() => CreateDoubleOpNode(CreateStage1, new TokenType[] { TokenType.Multiply, TokenType.Divide, TokenType.Modulo });
-        private Node CreateStage3() => CreateDoubleOpNode(CreateStage2, new TokenType[] { TokenType.Add, TokenType.Subtract });
-        private Node CreateStage4() => CreateDoubleOpNode(CreateStage3, new TokenType[] { TokenType.Equal, TokenType.NotEqual, TokenType.Greater, TokenType.Less });
-        private Node CreateStage5() => CreateDoubleOpNode(CreateStage4, new TokenType[] { TokenType.Or });
-        private Node CreateStage6() => CreateDoubleOpNode(CreateStage5, new TokenType[] { TokenType.And });
-        private Node CreateStage7() => CreateDoubleOpNode(CreateStage6, new TokenType[] { TokenType.Xor });
-        private Node CreateDoubleOpNode(Func<Node> function, TokenType[] tokenTypes)
-        {
-            Node left = function();
-            while (currentToken != null && tokenTypes.Contains(currentToken.Type))
-            {
-                Token @operator = currentToken;
-                NextToken();
-                left = new DoubleOpNode(left, @operator, function());
-            }
-            return left;
-        }
-    }
-
-
-
     internal abstract class Node
     {
-        public abstract object GetValue(ConditionsInterpreter interpreter);
+        public abstract object GetValue(IVariableProvider interpreter);
     }
 
     internal sealed class VarNode : Node
     {
-        public Token Value { get; }
+        public string VarName { get; }
 
-        public VarNode(Token value)
+        public VarNode(string varName)
+        {
+            VarName = varName;
+        }
+
+        public override object GetValue(IVariableProvider interpreter) => interpreter.GetVariableValue(VarName);
+    }
+    internal sealed class StringNode : Node
+    {
+        internal static readonly Node Empty = new StringNode(string.Empty);
+
+        public string Value { get; }
+
+        public StringNode(string value)
         {
             Value = value;
         }
 
-        public override object GetValue(ConditionsInterpreter interpreter)
-        {
-            string varName = Value.Value.ToString();
-
-            return interpreter.GetVariableValue(varName);
-        }
-    }
-    internal sealed class StringNode : Node
-    {
-        internal static readonly Node Empty = new StringNode(new Token(TokenType.String, string.Empty));
-
-        public Token Token { get; }
-
-        public StringNode(Token value)
-        {
-            Token = value;
-        }
-
-        public override object GetValue(ConditionsInterpreter interpreter) => Token.Value.ToString();
+        public override object GetValue(IVariableProvider interpreter) => Value.ToString();
     }
     internal sealed class ConcatingNode : Node
     {
@@ -181,34 +43,34 @@ namespace Aadev.ConditionsInterpreter
         public Node LNode { get; }
         public Node RNode { get; }
 
-        public override object GetValue(ConditionsInterpreter interpreter) => $"{LNode.GetValue(interpreter)}{RNode.GetValue(interpreter)}";
+        public override object GetValue(IVariableProvider interpreter) => $"{LNode.GetValue(interpreter)}{RNode.GetValue(interpreter)}";
     }
     internal sealed class BoolNode : Node
     {
-        public Token Value { get; }
+        public bool Value { get; }
 
-        public BoolNode(Token value)
+        public BoolNode(bool value)
         {
             Value = value;
         }
 
-        public override object GetValue(ConditionsInterpreter interpreter) => (Keywords)Value.Value == Keywords.True;
+        public override object GetValue(IVariableProvider interpreter) => Value;
     }
     internal sealed class NumberNode : Node
     {
-        public Token Value { get; }
+        public double Value { get; }
 
-        public NumberNode(Token value)
+        public NumberNode(double value)
         {
             Value = value;
         }
 
-        public override object GetValue(ConditionsInterpreter interpreter) => (double)Value.Value;
+        public override object GetValue(IVariableProvider interpreter) => Value;
     }
 
     internal sealed class SingleOpNode : Node
     {
-        public SingleOpNode(Node node, Token @operator)
+        public SingleOpNode(Node node, TokenType @operator)
         {
             Node = node;
             Operator = @operator;
@@ -216,15 +78,15 @@ namespace Aadev.ConditionsInterpreter
 
         public Node Node { get; }
 
-        public Token Operator { get; }
+        public TokenType Operator { get; }
 
-        public override object GetValue(ConditionsInterpreter interpreter)
+        public override object GetValue(IVariableProvider interpreter)
         {
             object rVal = Node.GetValue(interpreter);
 
 
 
-            if (Operator.Type is TokenType.Not)
+            if (Operator is TokenType.Not)
             {
                 if (!(rVal is bool bVal))
                 {
@@ -232,7 +94,7 @@ namespace Aadev.ConditionsInterpreter
                 }
                 return !bVal;
             }
-            if (Operator.Type is TokenType.Subtract)
+            if (Operator is TokenType.Subtract)
             {
                 if (!(rVal is double dVal))
                 {
@@ -248,7 +110,7 @@ namespace Aadev.ConditionsInterpreter
     }
     internal sealed class DoubleOpNode : Node
     {
-        public DoubleOpNode(Node lNode, Token @operator, Node rNode)
+        public DoubleOpNode(Node lNode, TokenType @operator, Node rNode)
         {
             LNode = lNode;
             Operator = @operator;
@@ -256,12 +118,12 @@ namespace Aadev.ConditionsInterpreter
         }
 
         public Node LNode { get; }
-        public Token Operator { get; }
+        public TokenType Operator { get; }
         public Node RNode { get; }
 
-        public override object GetValue(ConditionsInterpreter interpreter)
+        public override object GetValue(IVariableProvider interpreter)
         {
-            switch (Operator.Type)
+            switch (Operator)
             {
                 case TokenType.And:
                 {
@@ -502,8 +364,6 @@ namespace Aadev.ConditionsInterpreter
             }
         }
     }
-
-
 
 
 
