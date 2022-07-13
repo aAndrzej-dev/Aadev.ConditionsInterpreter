@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Numerics;
 
 namespace Aadev.ConditionsInterpreter
 {
@@ -205,10 +204,6 @@ namespace Aadev.ConditionsInterpreter
                         dlVal = dl;
                     if (rrVal is double dr)
                         drVal = dr;
-                    if (rlVal is BigInteger bl)
-                        dlVal = (double)bl;
-                    if (rrVal is BigInteger br)
-                        drVal = (double)br;
 
 
                     return dlVal < drVal;
@@ -227,11 +222,6 @@ namespace Aadev.ConditionsInterpreter
                         dlVal = dl;
                     if (rrVal is double dr)
                         drVal = dr;
-                    if (rlVal is BigInteger bl)
-                        dlVal = (double)bl;
-                    if (rrVal is BigInteger br)
-                        drVal = (double)br;
-
 
                     return dlVal > drVal;
 
@@ -262,10 +252,6 @@ namespace Aadev.ConditionsInterpreter
                         dlVal = dl;
                     if (rrVal is double dr)
                         drVal = dr;
-                    if (rlVal is BigInteger bl)
-                        dlVal = (double)bl;
-                    if (rrVal is BigInteger br)
-                        drVal = (double)br;
 
 
                     return dlVal + drVal;
@@ -284,10 +270,7 @@ namespace Aadev.ConditionsInterpreter
                         dlVal = dl;
                     if (rrVal is double dr)
                         drVal = dr;
-                    if (rlVal is BigInteger bl)
-                        dlVal = (double)bl;
-                    if (rrVal is BigInteger br)
-                        drVal = (double)br;
+
 
 
                     return dlVal - drVal;
@@ -306,10 +289,7 @@ namespace Aadev.ConditionsInterpreter
                         dlVal = dl;
                     if (rrVal is double dr)
                         drVal = dr;
-                    if (rlVal is BigInteger bl)
-                        dlVal = (double)bl;
-                    if (rrVal is BigInteger br)
-                        drVal = (double)br;
+
 
 
                     return dlVal * drVal;
@@ -328,10 +308,6 @@ namespace Aadev.ConditionsInterpreter
                         dlVal = dl;
                     if (rrVal is double dr)
                         drVal = dr;
-                    if (rlVal is BigInteger bl)
-                        dlVal = (double)bl;
-                    if (rrVal is BigInteger br)
-                        drVal = (double)br;
 
 
                     return dlVal / drVal;
@@ -350,10 +326,6 @@ namespace Aadev.ConditionsInterpreter
                         dlVal = dl;
                     if (rrVal is double dr)
                         drVal = dr;
-                    if (rlVal is BigInteger bl)
-                        dlVal = (double)bl;
-                    if (rrVal is BigInteger br)
-                        drVal = (double)br;
 
 
                     return dlVal % drVal;

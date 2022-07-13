@@ -9,16 +9,19 @@ namespace Aadev.ConditionsInterpreter
     internal class LexingStream
     {
         private readonly string condition;
-        private int index = -1;
+        private readonly Token[] buffer = new Token[5];
         private char? currentChar;
-
+        private int bufferLenght = 0;
+        private int index = -1;
+        private int outIndex = 0;
         private bool backsplash = false;
         private bool inString = false;
         private bool inStringBreak = false;
-        private readonly List<Token> buffer = new List<Token>();
 
 
-        private static readonly Regex wordRegEx = new Regex("[a-zA-Z0-9_]+", RegexOptions.Compiled);
+        
+
+        private static readonly Regex wordRegEx = new Regex("[a-zA-Z_]+[a-zA-Z0-9_]*", RegexOptions.Compiled);
         private static readonly Regex floatRegEx = new Regex("[0-9]+([.][0-9]+)?", RegexOptions.Compiled);
 
         [DebuggerStepThrough]
@@ -41,7 +44,7 @@ namespace Aadev.ConditionsInterpreter
             this.condition = condition;
             NextChar();
         }
-        private void CreateStrignContent(List<Token> tokens)
+        private void CreateStrignContent(Token[] tokens, ref int index)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -79,14 +82,14 @@ namespace Aadev.ConditionsInterpreter
                 NextChar();
             }
             if (sb.Length > 0)
-                tokens.Add(new Token(TokenType.String, sb.ToString()));
+                tokens[index++] = new Token(TokenType.String, sb.ToString());
             if (cont)
                 return;
             if (end)
             {
 
 
-                tokens.Add(new Token(TokenType.StringEnding));
+                tokens[index++] = new Token(TokenType.StringEnding);
 
                 inString = false;
             }
@@ -94,17 +97,16 @@ namespace Aadev.ConditionsInterpreter
 
         public Token? NextToken()
         {
-            if (currentChar is null && buffer.Count is 0)
+            if (currentChar is null && bufferLenght <= outIndex)
                 return null;
 
-            while (buffer.Count == 0 && currentChar != null)
+            while (bufferLenght <= outIndex && currentChar != null)
             {
-                NextMove();
+                bufferLenght = NextMove();
+                outIndex = 0;
             }
 
-            Token element = buffer[0];
-
-            buffer.RemoveAt(0);
+            Token element = buffer[outIndex++];
 
             return element;
 
@@ -113,8 +115,9 @@ namespace Aadev.ConditionsInterpreter
 
 
 
-        private void NextMove()
+        private int NextMove()
         {
+            int inIndex = 0;
             if (currentChar is '\\')
             {
                 if (!inString)
@@ -135,24 +138,24 @@ namespace Aadev.ConditionsInterpreter
                 {
                     if (backsplash)
                     {
-                        buffer.Add(new Token(TokenType.String, currentChar.ToString()));
+                        buffer[inIndex++] = new Token(TokenType.String, currentChar.ToString());
                         NextChar();
-                        return;
+                        return inIndex;
                     }
 
-                    buffer.Add(new Token(TokenType.StringEnding));
+                    buffer[inIndex++] = new Token(TokenType.StringEnding);
 
                     inString = false;
                     NextChar();
-                    return;
+                    return inIndex;
                 }
-                buffer.Add(new Token(TokenType.StringBeginning));
+                buffer[inIndex++] = new Token(TokenType.StringBeginning);
                 inString = true;
                 NextChar();
 
-                CreateStrignContent(buffer);
+                CreateStrignContent(buffer, ref inIndex);
 
-                return;
+                return inIndex;
 
             }
             if (currentChar is '$' && inString)
@@ -160,9 +163,9 @@ namespace Aadev.ConditionsInterpreter
 
                 if (backsplash)
                 {
-                    buffer.Add(new Token(TokenType.String, currentChar.ToString()));
+                    buffer[inIndex++] = new Token(TokenType.String, currentChar.ToString());
                     NextChar();
-                    return;
+                    return inIndex;
                 }
 
                 NextChar();
@@ -172,176 +175,183 @@ namespace Aadev.ConditionsInterpreter
 
 
 
-                buffer.Add(new Token(TokenType.StringEnding));
-                buffer.Add(new Token(TokenType.Add));
-                buffer.Add(new Token(TokenType.LParentheses));
+                buffer[inIndex++] = new Token(TokenType.StringEnding);
+                buffer[inIndex++] = new Token(TokenType.Add);
+                buffer[inIndex++] = new Token(TokenType.LParentheses);
 
                 inString = false;
                 inStringBreak = true;
 
                 NextChar();
-                return;
+                return inIndex;
 
             }
             if (currentChar is ')' && inStringBreak)
             {
-                buffer.Add(new Token(TokenType.RParentheses));
-                buffer.Add(new Token(TokenType.Add));
-                buffer.Add(new Token(TokenType.StringBeginning));
+                buffer[inIndex++] = new Token(TokenType.RParentheses);
+                buffer[inIndex++] = new Token(TokenType.Add);
+                buffer[inIndex++] = new Token(TokenType.StringBeginning);
                 inString = true;
                 inStringBreak = false;
                 NextChar();
 
 
-                CreateStrignContent(buffer);
+                CreateStrignContent(buffer, ref inIndex);
 
 
-                return;
+                return inIndex;
             }
 
 
             if (currentChar is ' ' || currentChar is '\n' || currentChar is '\r' || currentChar is '\t')
             {
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '(')
             {
-                buffer.Add(new Token(TokenType.LParentheses));
+                buffer[inIndex++] = new Token(TokenType.LParentheses);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is ')')
             {
-                buffer.Add(new Token(TokenType.RParentheses));
+                buffer[inIndex++] = new Token(TokenType.RParentheses);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '=')
             {
                 NextChar();
                 if (!(currentChar is '='))
                     throw new Exception($"Invalid usgae of symblol '=' at {index}");
-                buffer.Add(new Token(TokenType.Equal));
+                buffer[inIndex++] = new Token(TokenType.Equal);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '!')
             {
                 NextChar();
                 if (currentChar is '=')
                 {
-                    buffer.Add(new Token(TokenType.NotEqual));
+                    buffer[inIndex++] = new Token(TokenType.NotEqual);
                     NextChar();
-                    return;
+                    return inIndex;
                 }
-                buffer.Add(new Token(TokenType.Not));
-                return;
+                buffer[inIndex++] = new Token(TokenType.Not);
+                return inIndex;
             }
             if (currentChar is '&')
             {
                 NextChar();
                 if (!(currentChar is '&'))
                     throw new Exception($"Invalid usgae of symblol '&' at {index}");
-                buffer.Add(new Token(TokenType.And));
+                buffer[inIndex++] = new Token(TokenType.And);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '|')
             {
                 NextChar();
                 if (!(currentChar is '|'))
                     throw new Exception($"Invalid usgae of symblol '|' at {index}");
-                buffer.Add(new Token(TokenType.Or));
+                buffer[inIndex++] = new Token(TokenType.Or);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '^')
             {
-                buffer.Add(new Token(TokenType.Xor));
+                buffer[inIndex++] = new Token(TokenType.Xor);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '>')
             {
-                buffer.Add(new Token(TokenType.Greater));
+                buffer[inIndex++] = new Token(TokenType.Greater);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '<')
             {
-                buffer.Add(new Token(TokenType.Less));
+                buffer[inIndex++] = new Token(TokenType.Less);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '+')
             {
-                buffer.Add(new Token(TokenType.Add));
+                buffer[inIndex++] = new Token(TokenType.Add);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '-')
             {
-                buffer.Add(new Token(TokenType.Subtract));
+                buffer[inIndex++] = new Token(TokenType.Subtract);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '*')
             {
-                buffer.Add(new Token(TokenType.Multiply));
+                buffer[inIndex++] = new Token(TokenType.Multiply);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '/')
             {
-                buffer.Add(new Token(TokenType.Divide));
+                buffer[inIndex++] = new Token(TokenType.Divide);
                 NextChar();
-                return;
+                return inIndex;
             }
             if (currentChar is '%')
             {
-                buffer.Add(new Token(TokenType.Modulo));
+                buffer[inIndex++] = new Token(TokenType.Modulo);
                 NextChar();
-                return;
+                return inIndex;
             }
+
+
 
             Match floatMatch = floatRegEx.Match(condition, index);
 
-            if (floatMatch.Success)
+            if (floatMatch.Success && floatMatch.Index == index)
             {
-                buffer.Add(new Token(TokenType.Number, double.Parse(floatMatch.Value.Replace('.', ','))));
+                buffer[inIndex++] = new Token(TokenType.Number, double.Parse(floatMatch.Value.Replace('.', ',')));
 
                 index += floatMatch.Value.Length - 1;
                 NextChar();
-                return;
+                return inIndex;
             }
 
 
-            Match match = wordRegEx.Match(condition, index);
+            Match wordMatch = wordRegEx.Match(condition, index);
 
-            if (match.Success)
+            if (wordMatch.Success && wordMatch.Index == index)
             {
-                if (match.Value == "true")
+                
+                if (wordMatch.Value == "true")
                 {
-                    buffer.Add(new Token(TokenType.Keyword, Keywords.True));
+                    buffer[inIndex++] = new Token(TokenType.Keyword, Keywords.True);
                     index += 3;
                     NextChar();
-                    return;
+                    return inIndex;
                 }
-                if (match.Value == "false")
+                if (wordMatch.Value == "false")
                 {
-                    buffer.Add(new Token(TokenType.Keyword, Keywords.False));
+                    buffer[inIndex++] = new Token(TokenType.Keyword, Keywords.False);
                     index += 4;
                     NextChar();
-                    return;
+                    return inIndex;
                 }
 
-                buffer.Add(new Token(TokenType.Variable, match.Value));
-                index += match.Value.Length - 1;
+                buffer[inIndex++] = new Token(TokenType.Variable, wordMatch.Value);
+                index += wordMatch.Value.Length - 1;
                 NextChar();
-                return;
+                return inIndex;
 
             }
+
+
+
+          
 
             throw new Exception($"Invalid token: '{currentChar}' at {index}");
 
