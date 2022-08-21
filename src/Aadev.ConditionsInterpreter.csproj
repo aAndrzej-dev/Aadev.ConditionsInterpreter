@@ -9,16 +9,12 @@
 	<Nullable>enable</Nullable>
 	<AssemblyName>Aadev.ConditionsInterpreter</AssemblyName>
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	<Version>1.0.0-beta4</Version>
+	<Version>1.0.0</Version>
 	<Deterministic>True</Deterministic>
 	<DebugType>none</DebugType>
 	<Copyright>Copyright © aAndrzej-dev 2022</Copyright>
 	<PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.ConditionsInterpreter</PackageProjectUrl>
 	<RepositoryUrl>https://github.com/aAndrzej-dev/Aadev.ConditionsInterpreter</RepositoryUrl>
 	<PackageLicenseExpression>MIT</PackageLicenseExpression>
-	<PackageReleaseNotes>Bug fixes and performance improvements</PackageReleaseNotes>
   </PropertyGroup>
-
-
-
 </Project>

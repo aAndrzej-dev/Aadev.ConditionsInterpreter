@@ -15,8 +15,8 @@ namespace Aadev.ConditionsInterpreter
             if (variableBuffering is VariableBuffering.Request || variableBuffering is VariableBuffering.Instance)
                 varsValue = new Dictionary<string, object>();
 
-            LexingStream lexer = new LexingStream(conditionString);
-            rootNode = new ParseStream(lexer).Parse();
+            Lexer lexer = new Lexer(conditionString);
+            rootNode = new Parser(lexer).Parse();
         }
         private readonly Func<string, object> getVariable;
         private readonly VariableBuffering variableBuffering;

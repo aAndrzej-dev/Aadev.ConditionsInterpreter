@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Aadev.ConditionsInterpreter
 {
-    internal class LexingStream
+    internal class Lexer
     {
         private readonly string condition;
         private readonly Token[] buffer = new Token[5];
@@ -39,7 +39,7 @@ namespace Aadev.ConditionsInterpreter
             return currentChar;
         }
 
-        public LexingStream(string condition)
+        public Lexer(string condition)
         {
             this.condition = condition;
             NextChar();

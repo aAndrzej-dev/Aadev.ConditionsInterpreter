@@ -3,15 +3,15 @@ using System.Linq;
 
 namespace Aadev.ConditionsInterpreter
 {
-    internal class ParseStream
+    internal class Parser
     {
-        public ParseStream(LexingStream stream)
+        public Parser(Lexer stream)
         {
             this.stream = stream;
             NextToken();
         }
         private Token? currentToken;
-        private readonly LexingStream stream;
+        private readonly Lexer stream;
 
         public Token? NextToken() => currentToken = stream.NextToken();
 
